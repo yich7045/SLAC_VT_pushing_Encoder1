@@ -61,8 +61,8 @@ class Trainer:
         log_dir,
         seed=0,
         num_steps=1 * 10 ** 6,
-        initial_collection_steps=50000,
-        initial_learning_steps=50000,
+        initial_collection_steps=10000,
+        initial_learning_steps=10000,
         num_sequences=8,
         eval_interval=10,
         num_eval_episodes=10,
@@ -144,7 +144,7 @@ class Trainer:
         mean_return = 0.0
 
         for i in range(self.num_eval_episodes):
-            state = self.env.reset()
+            state = self.env.reset(random_pos=False)
             img = state[0][0]
             tactile = state[1]
             self.ob_test.reset_episode(img, tactile)
@@ -158,7 +158,7 @@ class Trainer:
                 tactile = state[1]
                 self.ob_test.append(img, tactile, action)
 
-            if reward != 25:
+            if reward <= 0:
                 reward = 0
             episode_return += reward
 
