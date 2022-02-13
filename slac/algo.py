@@ -28,7 +28,7 @@ class SlacAlgorithm:
         action_shape = (5,),
         tactile_shape = (6,),
         action_repeat = 1,
-        device = 'cuda',
+        device = 'cuda:2',
         seed = 1,
         gamma=0.99,
         batch_size_sac=256,
@@ -97,7 +97,7 @@ class SlacAlgorithm:
         state = torch.tensor(ob.state, dtype=torch.uint8, device=self.device).float().div_(255.0)
         tactile = torch.tensor(ob.tactile, dtype=torch.float64, device=self.device).float().div_(1000.)
         with torch.no_grad():
-            feature = self.latent.encoder(state, tactile).view(1, -1)
+            feature, _, _= self.latent.encoder(state, tactile).view(1, -1)
         action = torch.tensor(ob.action, dtype=torch.float, device=self.device)
         feature_action = torch.cat([feature, action], dim=1)
         return feature_action
@@ -169,7 +169,7 @@ class SlacAlgorithm:
     def prepare_batch(self, state_, tactile_, action_):
         with torch.no_grad():
             # f(1:t+1)
-            feature_ = self.latent.encoder(state_, tactile_)
+            feature_, _,_ = self.latent.encoder(state_, tactile_)
             # z(1:t+1)
             z_ = torch.cat(self.latent.sample_posterior(feature_, action_)[2:], dim=-1)
 
