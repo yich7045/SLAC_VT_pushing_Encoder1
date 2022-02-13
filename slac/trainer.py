@@ -118,6 +118,7 @@ class Trainer:
         for _ in bar:
             bar.set_description("Updating latent variable model.")
             self.algo.update_latent(self.writer)
+            self.algo.update_latent_align(self.writer)
 
         # Iterate collection, update and evaluation.
         for step in range(self.initial_collection_steps + 1, self.num_steps // self.action_repeat + 1):
@@ -126,6 +127,7 @@ class Trainer:
             # Update the algorithm.
             self.algo.update_latent(self.writer)
             self.algo.update_sac(self.writer)
+            self.algo.update_latent_align(self.writer)
 
             # Evaluate regularly.
             step_env = step * self.action_repeat
