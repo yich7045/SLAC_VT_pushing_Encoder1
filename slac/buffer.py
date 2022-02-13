@@ -143,6 +143,28 @@ class ReplayBuffer:
         tactile_ = torch.tensor(tactile_, dtype=torch.float32, device=self.device).float().div(1000.0)
         return state_, tactile_, self.action_[idxes], self.reward_[idxes], self.done_[idxes]
 
+    def misalign_sample_latent(self, batch_size):
+        """
+        Sample trajectories for updating latent variable model.
+        """
+        idxes_state = np.random.randint(low=0, high=self._n, size=batch_size)
+        idxes_tactile = np.random.randint(low=0, high=self._n, size=batch_size)
+
+        while len(np.intersect1d(idxes_state, idxes_tactile)) != 0:
+            idxes_state = np.random.randint(low=0, high=self._n, size=batch_size)
+            idxes_tactile = np.random.randint(low=0, high=self._n, size=batch_size)
+
+        state_ = np.empty((batch_size, self.num_sequences + 1, *self.state_shape), dtype=np.uint8)
+        tactile_ = np.empty((batch_size, self.num_sequences + 1, *self.tactile_shape), dtype=np.float32)
+        for i, idx in enumerate(idxes_state):
+            state_[i, ...] = self.state_[idx]
+        for i, idx in enumerate(idxes_tactile):
+            tactile_[i, ...] = self.tactile_[idx]
+
+        state_ = torch.tensor(state_, dtype=torch.uint8, device=self.device).float().div_(255.0)
+        tactile_ = torch.tensor(tactile_, dtype=torch.float16, device=self.device).float().div(1000.0)
+        return state_, tactile_, self.action_[idxes_state], self.reward_[idxes_state], self.done_[idxes_state]
+    
     def sample_sac(self, batch_size):
         """
         Sample trajectories for updating SAC.
