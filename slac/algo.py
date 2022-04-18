@@ -28,7 +28,7 @@ class SlacAlgorithm:
         action_shape = (3,),
         tactile_shape = (6,),
         action_repeat = 1,
-        device = 'cuda',
+        device = 'cuda:2',
         seed = 1,
         gamma=0.99,
         batch_size_sac=256,
@@ -38,12 +38,12 @@ class SlacAlgorithm:
         lr_sac=3e-4,
         lr_latent=1e-4,
         img_feature_dim=256,
-        tactile_feature_dim=96,
+        tactile_feature_dim=32,
         z1_dim=32,
         z2_dim=256,
         hidden_units=(256, 256),
         tau=5e-3,
-        force_norm=1.0
+        force_norm=50.0
     ):
         np.random.seed(seed)
         torch.manual_seed(seed)

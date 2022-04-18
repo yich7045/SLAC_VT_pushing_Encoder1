@@ -87,7 +87,7 @@ class Encoder(nn.Module):
     """
     Encoder.
     """
-    def __init__(self, input_dim=3, tactile_dim=6, img_dim=256, tactile_latent_dim=96, hidden_img=256):
+    def __init__(self, input_dim=3, tactile_dim=6, img_dim=256, tactile_latent_dim=32, hidden_img=256):
         super(Encoder, self).__init__()
 
         self.net = nn.Sequential(
@@ -107,28 +107,34 @@ class Encoder(nn.Module):
             nn.Conv2d(128, hidden_img, 3, 2),
             nn.LeakyReLU(0.2, inplace=True),
         )
-
+        self.force_preprocess = nn.Tanh()
         self.tactile_net = nn.Sequential(nn.Linear(tactile_dim, tactile_latent_dim),
-                                         nn.LeakyReLU(0.2, inplace=True),
-                                         )
+                                         nn.LeakyReLU(0.2, inplace=True))
 
-        self.tactile_recognize = nn.Sequential(nn.Linear(tactile_latent_dim + hidden_img, 1),
+        self.tactile_recognize = nn.Sequential(nn.Linear(tactile_latent_dim + hidden_img,1),
                                 nn.Sigmoid())
 
-        self.alignment_recognize = nn.Sequential(nn.Linear(tactile_latent_dim + hidden_img, 1),
-                                nn.Sigmoid())
+        self.alignment_recognize = nn.Sequential(nn.Linear(tactile_latent_dim + hidden_img,1),
+                                                nn.Sigmoid())
 
         self.bottle_neck = nn.Sequential(nn.Linear(tactile_latent_dim+hidden_img,tactile_latent_dim+img_dim),
                                          nn.LeakyReLU(0.2, inplace=True))
-
+        self.layer_norm = nn.LayerNorm(tactile_latent_dim+img_dim)
+        self.tactile_process = nn.Tanh()
+        self.tactile_norm = nn.LayerNorm(tactile_latent_dim)
+        self.img_norm = nn.LayerNorm(hidden_img)
     def forward(self, x, tactile):
         B, S, C, H, W = x.size()
         x = x.view(B * S, C, H, W)
         x = self.net(x)
         tactile= tactile.view(B*S, -1)
+        tactile = self.force_preprocess(tactile)
         tactile_x = self.tactile_net(tactile)
+        tactile_x = self.tactile_norm(tactile_x)
         x = x.view(B*S, -1)
+        x = self.img_norm(x)
         x = torch.cat((x, tactile_x), dim=1)
+        x = self.layer_norm(x)
         x = x.view(B, S, -1)
         return self.bottle_neck(x), self.tactile_recognize(x), self.alignment_recognize(x)
 
